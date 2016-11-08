@@ -45,5 +45,6 @@ The template creates the following resources:
 <li>TCP 8080 open to the world</li>
 <li>Access at http://serverurl:8080/</li>
     </ol>
+    </ol>
 
 The only parameter supported is KeyName: the name of the private key that will be used to access the instances created by the template. This key must exist before running the template.

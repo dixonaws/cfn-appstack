@@ -152,7 +152,7 @@
           "Ref": "WebServerASG"
         },
         "Cooldown": "60",
-        "ScalingAdjustment": "3"
+        "ScalingAdjustment": "1"
       }
     },
     "WebServerScaleDownPolicy": {
