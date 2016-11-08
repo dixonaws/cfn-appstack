@@ -12,7 +12,38 @@
   },
 
   "Resources" : {
-    "WebServerASG" : {
+    "OpenAMASG" : {
+      "Type" : "AWS::AutoScaling::AutoScalingGroup",
+      "Properties" : {
+        "AvailabilityZones" : ["us-east-1a", "us-east-1c"],
+        "LaunchConfigurationName" : { "Ref" : "OpenAMLC" },
+        "MinSize" : "1",
+        "MaxSize" : "1",
+        "LoadBalancerNames" : [ { "Ref" : "WebELB" } ],
+        "Tags" : [ {
+         "Key" : "Name",
+         "Value" : "cfn-appstack-OpenAMASG",
+         "PropagateAtLaunch" : "true"
+      }, {
+         "Key" : "Application_ID",
+         "Value" : "some_appl_id",
+         "PropagateAtLaunch" : "true"
+      } ]
+      }
+   },
+    
+      "OpenAMLC" : {
+      "Type" : "AWS::AutoScaling::LaunchConfiguration",
+      "Properties" : {
+        "KeyName" : { "Ref" : "KeyName" },
+        "ImageId" : "ami-84311293",
+        "SecurityGroups" : [ { "Ref" : "OpenAMSG" } ],
+        "InstanceType" : "m3.large"
+      }
+    },
+
+      
+      "WebServerASG" : {
       "Type" : "AWS::AutoScaling::AutoScalingGroup",
       "Properties" : {
         "AvailabilityZones" : ["us-east-1a", "us-east-1c", "us-east-1d"],
@@ -22,7 +53,7 @@
         "LoadBalancerNames" : [ { "Ref" : "WebELB" } ],
         "Tags" : [ {
          "Key" : "Name",
-         "Value" : "WebServerASG",
+         "Value" : "cfn-appstack-WebServerASG",
          "PropagateAtLaunch" : "true"
       }, {
          "Key" : "Application_ID",
@@ -140,7 +171,28 @@
           "SourceSecurityGroupName" : {"Fn::GetAtt" : ["WebELB", "SourceSecurityGroup.GroupName"]}
         } ]
       }
+    },
+      
+      "OpenAMSG" : {
+      "Type" : "AWS::EC2::SecurityGroup",
+      "Properties" : {
+        "GroupDescription" : "Enable SSH access and HTTP/8080 access",
+        "SecurityGroupIngress" : [ {
+          "IpProtocol" : "tcp",
+          "FromPort" : "8080",
+          "ToPort" : "8080",
+          "CidrIp" : "0.0.0.0/0"
+        }, 
+         {
+          "IpProtocol" : "tcp",
+          "FromPort" : "22",
+          "ToPort" : "22",
+          "CidrIp" : "0.0.0.0/0"
+        } 
+      ]
+      }
     }
+      
   },
 
   "Outputs" : {
