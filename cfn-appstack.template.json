@@ -3,44 +3,11 @@
 
   "Description" : "cfn-appstack. Create a load balanced, auto-scaled web site across three availability zones in AWS US East (a, c, and d). The auto scaling trigger is based on the CPU utilization of the web servers. The instances are load balanced with a simple health check -- access port 80 of the instance. If it returns HTTP 200, then the health check passes. The group is fixed at three instances. Cloudwatch alarms are configured to scale the group when CPU load on one instance surpasses 50%. The group scales down by once instance when CPU load falls below 20%. The web site is available on port 80 of the load balancer. Instances are accessible from the internet via SSH on port 22.",
 
-  "Parameters" : {
-    "InstanceType" : {
-      "Description" : "Type of EC2 instance to launch",
-      "Type" : "String",
-      "Default" : "m3.medium"
-    },
-    "WebServerPort" : {
-      "Description" : "The TCP port for the Web Server",
-      "Type" : "String",
-      "Default" : "80"
-    },
+  "Parameters" : {    
     "KeyName" : {
       "Description" : "The EC2 Key Pair to allow SSH access to the instances",
       "Type" : "String",
       "Default" : "dixonaws"
-    }
-  },
-
-  "Mappings" : {
-    "AWSInstanceType2Arch" : {
-      "t1.micro"    : { "Arch" : "64" },
-      "m1.small"    : { "Arch" : "32" },
-      "m1.large"    : { "Arch" : "64" },
-      "m1.xlarge"   : { "Arch" : "64" },
-      "m2.xlarge"   : { "Arch" : "64" },
-      "m2.2xlarge"  : { "Arch" : "64" },
-      "m2.4xlarge"  : { "Arch" : "64" },
-      "c1.medium"   : { "Arch" : "32" },
-      "c1.xlarge"   : { "Arch" : "64" },
-      "cc1.4xlarge" : { "Arch" : "64" }
-    },
-    
-    "AWSRegionArch2AMI" : {
-      "us-east-1" : { "32" : "ami-6411e20d", "64" : "ami-7a11e213" },
-      "us-west-1" : { "32" : "ami-c9c7978c", "64" : "ami-cfc7978a" },
-      "eu-west-1" : { "32" : "ami-37c2f643", "64" : "ami-31c2f645" },
-      "ap-southeast-1" : { "32" : "ami-66f28c34", "64" : "ami-60f28c32" },
-      "ap-northeast-1" : { "32" : "ami-9c03a89d", "64" : "ami-a003a8a1" }
     }
   },
 
@@ -52,7 +19,16 @@
         "LaunchConfigurationName" : { "Ref" : "WebServerLC" },
         "MinSize" : "3",
         "MaxSize" : "3",
-        "LoadBalancerNames" : [ { "Ref" : "ElasticLoadBalancer" } ]
+        "LoadBalancerNames" : [ { "Ref" : "WebELB" } ],
+        "Tags" : [ {
+         "Key" : "Name",
+         "Value" : "WebServerASG",
+         "PropagateAtLaunch" : "true"
+      }, {
+         "Key" : "Application_ID",
+         "Value" : "some_appl_id",
+         "PropagateAtLaunch" : "true"
+      } ]
       }
    },
 
@@ -61,7 +37,7 @@
       "Properties" : {
         "KeyName" : { "Ref" : "KeyName" },
         "ImageId" : "ami-42f1d655",
-        "SecurityGroups" : [ { "Ref" : "InstanceSecurityGroup" } ],
+        "SecurityGroups" : [ { "Ref" : "WebInstanceSecurityGroup" } ],
         "InstanceType" : "m1.small"
       }
     },
@@ -127,17 +103,17 @@
       }
     },
 
-    "ElasticLoadBalancer" : {
+    "WebELB" : {
       "Type" : "AWS::ElasticLoadBalancing::LoadBalancer",
       "Properties" : {
         "AvailabilityZones" : { "Fn::GetAZs" : "" },
         "Listeners" : [ {
           "LoadBalancerPort" : "80",
-          "InstancePort" : { "Ref" : "WebServerPort" },
+          "InstancePort" : "80",
           "Protocol" : "HTTP"
         } ],
         "HealthCheck" : {
-          "Target" : { "Fn::Join" : [ "", ["HTTP:", { "Ref" : "WebServerPort" }, "/"]]},
+          "Target" : { "Fn::Join" : [ "", ["HTTP:", "80", "/"]]},
           "HealthyThreshold" : "3",
           "UnhealthyThreshold" : "5",
           "Interval" : "30",
@@ -146,7 +122,7 @@
       }
     },
 
-    "InstanceSecurityGroup" : {
+    "WebInstanceSecurityGroup" : {
       "Type" : "AWS::EC2::SecurityGroup",
       "Properties" : {
         "GroupDescription" : "Enable SSH access and HTTP access on the inbound port",
@@ -158,10 +134,10 @@
         },
         {
           "IpProtocol" : "tcp",
-          "FromPort" : { "Ref" : "WebServerPort" },
-          "ToPort" : { "Ref" : "WebServerPort" },
-          "SourceSecurityGroupOwnerId" : {"Fn::GetAtt" : ["ElasticLoadBalancer", "SourceSecurityGroup.OwnerAlias"]},
-          "SourceSecurityGroupName" : {"Fn::GetAtt" : ["ElasticLoadBalancer", "SourceSecurityGroup.GroupName"]}
+          "FromPort" : "80",
+          "ToPort" : "80",
+          "SourceSecurityGroupOwnerId" : {"Fn::GetAtt" : ["WebELB", "SourceSecurityGroup.OwnerAlias"]},
+          "SourceSecurityGroupName" : {"Fn::GetAtt" : ["WebELB", "SourceSecurityGroup.GroupName"]}
         } ]
       }
     }
@@ -169,8 +145,8 @@
 
   "Outputs" : {
     "URL" : {
-      "Description" : "The URL of the website",
-      "Value" :  { "Fn::Join" : [ "", [ "http://", { "Fn::GetAtt" : [ "ElasticLoadBalancer", "DNSName" ]}]]}
+      "Description" : "The URL of the WebELB",
+      "Value" :  { "Fn::Join" : [ "", [ "http://", { "Fn::GetAtt" : [ "WebELB", "DNSName" ]}]]}
     }
   }
 }
