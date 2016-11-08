@@ -12,7 +12,7 @@ Of course, you'll need to define your AWS credential in your profile, per http:/
 
 The template creates the following resources:<ol>
 <li>1. Web servers in an autoscaling group (WebServerASG)</li>
-    a. 3 web servers in us-east-1 across AZs a, c, and d
+<li>a. 3 web servers in us-east-1 across AZs a, c, and d</li>
     b. Stubs for policy adjustments based on CPU metrics - CPUAlarmLow and CPUAlarmHigh (min and max is 3 in this example template)
 2. A launch configuration that references an Amazon Linux AMI (WebServerLC)
     a. Instance size m1.small, 16GB root partition
