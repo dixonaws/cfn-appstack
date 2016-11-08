@@ -1,6 +1,6 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
-  "Description": "cfn-appstack. Create a load balanced, auto-scaled web site across three availability zones in AWS US East (a, c, and d). The auto scaling trigger is based on the CPU utilization of the web servers. The instances are load balanced with a simple health check -- access port 80 of the instance. If it returns HTTP 200, then the health check passes. The group is fixed at three instances. Cloudwatch alarms are configured to scale the group when CPU load on one instance surpasses 50%. The group scales down by once instance when CPU load falls below 20%. The web site is available on port 80 of the load balancer. Instances are accessible from the internet via SSH on port 22.",
+  "Description": "cfn-appstack. Cloudformation template (JSON) for a simple application stack. Includes 3 web servers, 1 app server, 1 AM server",
   "Parameters": {
     "KeyName": {
       "Description": "The EC2 Key Pair to allow SSH access to the instances",
@@ -293,8 +293,9 @@
           },
           {
             "IpProtocol": "tcp",
-            "FromPort": "80",
-            "ToPort": "80"
+            "FromPort": "8080",
+            "ToPort": "8080",
+            "CidrIp": "0.0.0.0/0"
           }
         ]
       }
