@@ -1,100 +1,174 @@
 {
-  "AWSTemplateFormatVersion" : "2010-09-09",
-
-  "Description" : "cfn-appstack. Create a load balanced, auto-scaled web site across three availability zones in AWS US East (a, c, and d). The auto scaling trigger is based on the CPU utilization of the web servers. The instances are load balanced with a simple health check -- access port 80 of the instance. If it returns HTTP 200, then the health check passes. The group is fixed at three instances. Cloudwatch alarms are configured to scale the group when CPU load on one instance surpasses 50%. The group scales down by once instance when CPU load falls below 20%. The web site is available on port 80 of the load balancer. Instances are accessible from the internet via SSH on port 22.",
-
-  "Parameters" : {    
-    "KeyName" : {
-      "Description" : "The EC2 Key Pair to allow SSH access to the instances",
-      "Type" : "String",
-      "Default" : "dixonaws"
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "cfn-appstack. Create a load balanced, auto-scaled web site across three availability zones in AWS US East (a, c, and d). The auto scaling trigger is based on the CPU utilization of the web servers. The instances are load balanced with a simple health check -- access port 80 of the instance. If it returns HTTP 200, then the health check passes. The group is fixed at three instances. Cloudwatch alarms are configured to scale the group when CPU load on one instance surpasses 50%. The group scales down by once instance when CPU load falls below 20%. The web site is available on port 80 of the load balancer. Instances are accessible from the internet via SSH on port 22.",
+  "Parameters": {
+    "KeyName": {
+      "Description": "The EC2 Key Pair to allow SSH access to the instances",
+      "Type": "String",
+      "Default": "dixonaws"
     }
   },
-
-  "Resources" : {
-    "OpenAMASG" : {
-      "Type" : "AWS::AutoScaling::AutoScalingGroup",
-      "Properties" : {
-        "AvailabilityZones" : ["us-east-1a", "us-east-1c"],
-        "LaunchConfigurationName" : { "Ref" : "OpenAMLC" },
-        "MinSize" : "1",
-        "MaxSize" : "1",
-        "LoadBalancerNames" : [ { "Ref" : "WebELB" } ],
-        "Tags" : [ {
-         "Key" : "Name",
-         "Value" : "cfn-appstack-OpenAMASG",
-         "PropagateAtLaunch" : "true"
-      }, {
-         "Key" : "Application_ID",
-         "Value" : "some_appl_id",
-         "PropagateAtLaunch" : "true"
-      } ]
-      }
-   },
-    
-      "OpenAMLC" : {
-      "Type" : "AWS::AutoScaling::LaunchConfiguration",
-      "Properties" : {
-        "KeyName" : { "Ref" : "KeyName" },
-        "ImageId" : "ami-84311293",
-        "SecurityGroups" : [ { "Ref" : "OpenAMSG" } ],
-        "InstanceType" : "m3.large"
-      }
-    },
-
-      
-      "WebServerASG" : {
-      "Type" : "AWS::AutoScaling::AutoScalingGroup",
-      "Properties" : {
-        "AvailabilityZones" : ["us-east-1a", "us-east-1c", "us-east-1d"],
-        "LaunchConfigurationName" : { "Ref" : "WebServerLC" },
-        "MinSize" : "3",
-        "MaxSize" : "3",
-        "LoadBalancerNames" : [ { "Ref" : "WebELB" } ],
-        "Tags" : [ {
-         "Key" : "Name",
-         "Value" : "cfn-appstack-WebServerASG",
-         "PropagateAtLaunch" : "true"
-      }, {
-         "Key" : "Application_ID",
-         "Value" : "some_appl_id",
-         "PropagateAtLaunch" : "true"
-      } ]
-      }
-   },
-
-    "WebServerLC" : {
-      "Type" : "AWS::AutoScaling::LaunchConfiguration",
-      "Properties" : {
-        "KeyName" : { "Ref" : "KeyName" },
-        "ImageId" : "ami-42f1d655",
-        "SecurityGroups" : [ { "Ref" : "WebInstanceSecurityGroup" } ],
-        "InstanceType" : "m1.small"
+  "Resources": {
+    "OpenAMASG": {
+      "Type": "AWS::AutoScaling::AutoScalingGroup",
+      "Properties": {
+        "AvailabilityZones": [
+          "us-east-1a",
+          "us-east-1c"
+        ],
+        "LaunchConfigurationName": {
+          "Ref": "OpenAMLC"
+        },
+        "MinSize": "1",
+        "MaxSize": "1",
+        "LoadBalancerNames": [
+          {
+            "Ref": "WebELB"
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "cfn-appstack-OpenAMASG",
+            "PropagateAtLaunch": "true"
+          },
+          {
+            "Key": "Application_ID",
+            "Value": "some_appl_id",
+            "PropagateAtLaunch": "true"
+          }
+        ]
       }
     },
-
-    "WebServerScaleUpPolicy" : {
-      "Type" : "AWS::AutoScaling::ScalingPolicy",
-      "Properties" : {
-        "AdjustmentType" : "ChangeInCapacity",
-        "AutoScalingGroupName" : { "Ref" : "WebServerASG" },
-        "Cooldown" : "60",
-        "ScalingAdjustment" : "3"
+    "OpenAMLC": {
+      "Type": "AWS::AutoScaling::LaunchConfiguration",
+      "Properties": {
+        "KeyName": {
+          "Ref": "KeyName"
+        },
+        "ImageId": "ami-84311293",
+        "SecurityGroups": [
+          {
+            "Ref": "OpenAMSG"
+          }
+        ],
+        "InstanceType": "m3.large"
       }
     },
-    "WebServerScaleDownPolicy" : {
-      "Type" : "AWS::AutoScaling::ScalingPolicy",
-      "Properties" : {
-        "AdjustmentType" : "ChangeInCapacity",
-        "AutoScalingGroupName" : { "Ref" : "WebServerASG" },
-        "Cooldown" : "60",
-        "ScalingAdjustment" : "-1"
+    "AppServerASG": {
+      "Type": "AWS::AutoScaling::AutoScalingGroup",
+      "Properties": {
+        "AvailabilityZones": [
+          "us-east-1a",
+          "us-east-1c"
+        ],
+        "LaunchConfigurationName": {
+          "Ref": "AppServerLC"
+        },
+        "MinSize": "1",
+        "MaxSize": "1",
+
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "cfn-appstack-AppServerASG",
+            "PropagateAtLaunch": "true"
+          },
+          {
+            "Key": "Application_ID",
+            "Value": "some_appl_id",
+            "PropagateAtLaunch": "true"
+          }
+        ]
       }
     },
-
+    "AppServerLC": {
+      "Type": "AWS::AutoScaling::LaunchConfiguration",
+      "Properties": {
+        "KeyName": {
+          "Ref": "KeyName"
+        },
+        "ImageId": "ami-84311293",
+        "SecurityGroups": [
+          {
+            "Ref": "AppInstanceSecurityGroup"
+          }
+        ],
+        "InstanceType": "m3.2xlarge"
+      }
+    },
+    "WebServerASG": {
+      "Type": "AWS::AutoScaling::AutoScalingGroup",
+      "Properties": {
+        "AvailabilityZones": [
+          "us-east-1a",
+          "us-east-1c",
+          "us-east-1d"
+        ],
+        "LaunchConfigurationName": {
+          "Ref": "WebServerLC"
+        },
+        "MinSize": "3",
+        "MaxSize": "3",
+        "LoadBalancerNames": [
+          {
+            "Ref": "WebELB"
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "cfn-appstack-WebServerASG",
+            "PropagateAtLaunch": "true"
+          },
+          {
+            "Key": "Application_ID",
+            "Value": "some_appl_id",
+            "PropagateAtLaunch": "true"
+          }
+        ]
+      }
+    },
+    "WebServerLC": {
+      "Type": "AWS::AutoScaling::LaunchConfiguration",
+      "Properties": {
+        "KeyName": {
+          "Ref": "KeyName"
+        },
+        "ImageId": "ami-42f1d655",
+        "SecurityGroups": [
+          {
+            "Ref": "WebInstanceSecurityGroup"
+          }
+        ],
+        "InstanceType": "m1.small"
+      }
+    },
+    "WebServerScaleUpPolicy": {
+      "Type": "AWS::AutoScaling::ScalingPolicy",
+      "Properties": {
+        "AdjustmentType": "ChangeInCapacity",
+        "AutoScalingGroupName": {
+          "Ref": "WebServerASG"
+        },
+        "Cooldown": "60",
+        "ScalingAdjustment": "3"
+      }
+    },
+    "WebServerScaleDownPolicy": {
+      "Type": "AWS::AutoScaling::ScalingPolicy",
+      "Properties": {
+        "AdjustmentType": "ChangeInCapacity",
+        "AutoScalingGroupName": {
+          "Ref": "WebServerASG"
+        },
+        "Cooldown": "60",
+        "ScalingAdjustment": "-1"
+      }
+    },
     "CPUAlarmHigh": {
-     "Type": "AWS::CloudWatch::Alarm",
-     "Properties": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
         "AlarmDescription": "Scale-up if CPU > 50% for 10 minutes",
         "MetricName": "CPUUtilization",
         "Namespace": "AWS/EC2",
@@ -102,20 +176,25 @@
         "Period": "300",
         "EvaluationPeriods": "2",
         "Threshold": "50",
-        "AlarmActions": [ { "Ref": "WebServerScaleUpPolicy" } ],
+        "AlarmActions": [
+          {
+            "Ref": "WebServerScaleUpPolicy"
+          }
+        ],
         "Dimensions": [
           {
             "Name": "AutoScalingGroupName",
-            "Value": { "Ref": "WebServerASG" }
+            "Value": {
+              "Ref": "WebServerASG"
+            }
           }
         ],
         "ComparisonOperator": "GreaterThanThreshold"
       }
     },
-    
     "CPUAlarmLow": {
-     "Type": "AWS::CloudWatch::Alarm",
-     "Properties": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
         "AlarmDescription": "Scale-down if CPU < 20% for 10 minutes",
         "MetricName": "CPUUtilization",
         "Namespace": "AWS/EC2",
@@ -123,82 +202,141 @@
         "Period": "300",
         "EvaluationPeriods": "2",
         "Threshold": "20",
-        "AlarmActions": [ { "Ref": "WebServerScaleDownPolicy" } ],
+        "AlarmActions": [
+          {
+            "Ref": "WebServerScaleDownPolicy"
+          }
+        ],
         "Dimensions": [
           {
             "Name": "AutoScalingGroupName",
-            "Value": { "Ref": "WebServerASG" }
+            "Value": {
+              "Ref": "WebServerASG"
+            }
           }
         ],
         "ComparisonOperator": "LessThanThreshold"
       }
     },
-
-    "WebELB" : {
-      "Type" : "AWS::ElasticLoadBalancing::LoadBalancer",
-      "Properties" : {
-        "AvailabilityZones" : { "Fn::GetAZs" : "" },
-        "Listeners" : [ {
-          "LoadBalancerPort" : "80",
-          "InstancePort" : "80",
-          "Protocol" : "HTTP"
-        } ],
-        "HealthCheck" : {
-          "Target" : { "Fn::Join" : [ "", ["HTTP:", "80", "/"]]},
-          "HealthyThreshold" : "3",
-          "UnhealthyThreshold" : "5",
-          "Interval" : "30",
-          "Timeout" : "5"
+    "WebELB": {
+      "Type": "AWS::ElasticLoadBalancing::LoadBalancer",
+      "Properties": {
+        "AvailabilityZones": {
+          "Fn::GetAZs": ""
+        },
+        "Listeners": [
+          {
+            "LoadBalancerPort": "80",
+            "InstancePort": "80",
+            "Protocol": "HTTP"
+          }
+        ],
+        "HealthCheck": {
+          "Target": {
+            "Fn::Join": [
+              "",
+              [
+                "HTTP:",
+                "80",
+                "/"
+              ]
+            ]
+          },
+          "HealthyThreshold": "3",
+          "UnhealthyThreshold": "5",
+          "Interval": "30",
+          "Timeout": "5"
         }
       }
     },
-
-    "WebInstanceSecurityGroup" : {
-      "Type" : "AWS::EC2::SecurityGroup",
-      "Properties" : {
-        "GroupDescription" : "Enable SSH access and HTTP access on the inbound port",
-        "SecurityGroupIngress" : [ {
-          "IpProtocol" : "tcp",
-          "FromPort" : "22",
-          "ToPort" : "22",
-          "CidrIp" : "0.0.0.0/0"
-        },
-        {
-          "IpProtocol" : "tcp",
-          "FromPort" : "80",
-          "ToPort" : "80",
-          "SourceSecurityGroupOwnerId" : {"Fn::GetAtt" : ["WebELB", "SourceSecurityGroup.OwnerAlias"]},
-          "SourceSecurityGroupName" : {"Fn::GetAtt" : ["WebELB", "SourceSecurityGroup.GroupName"]}
-        } ]
+    "WebInstanceSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Enable SSH access and HTTP access on the inbound port",
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "22",
+            "ToPort": "22",
+            "CidrIp": "0.0.0.0/0"
+          },
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "80",
+            "ToPort": "80",
+            "SourceSecurityGroupOwnerId": {
+              "Fn::GetAtt": [
+                "WebELB",
+                "SourceSecurityGroup.OwnerAlias"
+              ]
+            },
+            "SourceSecurityGroupName": {
+              "Fn::GetAtt": [
+                "WebELB",
+                "SourceSecurityGroup.GroupName"
+              ]
+            }
+          }
+        ]
       }
     },
-      
-      "OpenAMSG" : {
-      "Type" : "AWS::EC2::SecurityGroup",
-      "Properties" : {
-        "GroupDescription" : "Enable SSH access and HTTP/8080 access",
-        "SecurityGroupIngress" : [ {
-          "IpProtocol" : "tcp",
-          "FromPort" : "8080",
-          "ToPort" : "8080",
-          "CidrIp" : "0.0.0.0/0"
-        }, 
-         {
-          "IpProtocol" : "tcp",
-          "FromPort" : "22",
-          "ToPort" : "22",
-          "CidrIp" : "0.0.0.0/0"
-        } 
-      ]
+    "AppInstanceSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Enable SSH access and HTTP access on the inbound port",
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "22",
+            "ToPort": "22",
+            "CidrIp": "0.0.0.0/0"
+          },
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "80",
+            "ToPort": "80"
+          }
+        ]
+      }
+    },
+    "OpenAMSG": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Enable SSH access and HTTP/8080 access",
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "8080",
+            "ToPort": "8080",
+            "CidrIp": "0.0.0.0/0"
+          },
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "22",
+            "ToPort": "22",
+            "CidrIp": "0.0.0.0/0"
+          }
+        ]
       }
     }
-      
   },
-
-  "Outputs" : {
-    "URL" : {
-      "Description" : "The URL of the WebELB",
-      "Value" :  { "Fn::Join" : [ "", [ "http://", { "Fn::GetAtt" : [ "WebELB", "DNSName" ]}]]}
+  "Outputs": {
+    "URL": {
+      "Description": "The URL of the WebELB",
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            "http://",
+            {
+              "Fn::GetAtt": [
+                "WebELB",
+                "DNSName"
+              ]
+            }
+          ]
+        ]
+      }
     }
   }
 }
