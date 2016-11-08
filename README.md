@@ -10,8 +10,8 @@ You can tear down a stack using the cloudformation CLI:
     
 Of course, you'll need to define your AWS credential in your profile, per http://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html
 
-The template creates the following resources:
-1. Web servers in an autoscaling group (WebServerASG)
+The template creates the following resources:<ol>
+<li>1. Web servers in an autoscaling group (WebServerASG)</li>
     a. 3 web servers in us-east-1 across AZs a, c, and d
     b. Stubs for policy adjustments based on CPU metrics - CPUAlarmLow and CPUAlarmHigh (min and max is 3 in this example template)
 2. A launch configuration that references an Amazon Linux AMI (WebServerLC)
@@ -25,6 +25,9 @@ The template creates the following resources:
     b. Instances listen on TCP 80
     c. Healthcheck pings TCP 80 on each instance
     d. The ASG itself and the instances are tagged with Name and Application_ID keys
-5. 
-
+5. A ForgeRock OpenAM server installed in a random AZ in us-east-1 (AZ a or b) (OpenAM-ASG)
+    a. based on ami-84311293
+    b. Access at http://serverurl:8080/openam
+    </ol>
+    
 The only parameter supported is KeyName: the name of the private key that will be used to access the instances created by the template. This key must exist before running the template.
